@@ -1,6 +1,5 @@
 import lldb
 import re
-import lldb
 
 
 base_save_path = None # "simple/dy/lldb_result"
@@ -85,8 +84,8 @@ def dump_line(debugger, command, result, internal_dict):
 # command script import xxx/lldb_util.py
 def __lldb_init_module(debugger, internal_dict):
     # 当采用加载脚本时会调用该方法
-    debugger.HandleCommand('command script add -f dump_lldb.dump_function dumpF')
-    debugger.HandleCommand('command script add -f dump_lldb.dump_mems dumpM')
-    debugger.HandleCommand('command script add -f dump_lldb.dump_registers dumpR')
-    debugger.HandleCommand('command script add -f dump_lldb.dump_ext_registers dumpR2')
-    debugger.HandleCommand('command script add -f dump_lldb.dump_line dumpL')
+    debugger.HandleCommand('command script add -f lldb_util.dump_function dumpF')
+    debugger.HandleCommand('command script add -f lldb_util.dump_mems dumpM')
+    debugger.HandleCommand('command script add -f lldb_util.dump_registers dumpR')
+    debugger.HandleCommand('command script add -f lldb_util.dump_ext_registers dumpR2')
+    debugger.HandleCommand('command script add -f lldb_util.dump_line dumpL')
