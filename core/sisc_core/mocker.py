@@ -76,12 +76,22 @@ class Mem(object):
 
     def __getitem__(self, item):
         if isinstance(item, slice):
+            assert len(self.stack) - self.index > item.stop - item.start
             return self.stack[slice(item.start + self.index, self.index + item.stop, item.step)]
         return self.stack[self.index + item]
 
     def __setitem__(self, key, value):
-        assert isinstance(value, int) and isinstance(key, int)
-        self.stack[self.index + key] = value & 0xFF
+        assert isinstance(value, int)
+        if isinstance(value, int):
+            self.stack[self.index + key] = value & 0xFF
+            return
+        elif isinstance(value, Mem):
+            value = value.to_list()
+        assert isinstance(value, list)
+        if isinstance(key, slice):
+            self.stack[slice(key.start + self.index, key.stop + self.index, key.step)] = value
+        else:
+            self.stack[self.index + key:len(value)] = value
 
     def __add__(self, other):
         assert isinstance(other, int)
@@ -90,6 +100,36 @@ class Mem(object):
     def __sub__(self, other):
         assert isinstance(other, int)
         return Mem(self.index - other, self.stack)
+
+    def __xor__(self, other):
+        _a = self.to_list()
+        if isinstance(other, int):
+            return Mem(0, [_ ^ other for _ in _a])
+        if isinstance(other, Mem):
+            other = other.to_list()
+        assert isinstance(other, list)
+        _len = min(len(self), len(other))
+        return Mem(0, [_a[_] ^ other[_] for _ in range(_len)])
+
+    def __and__(self, other):
+        _a = self.to_list()
+        if isinstance(other, int):
+            return Mem(0, [_ & other for _ in _a])
+        if isinstance(other, Mem):
+            other = other.to_list()
+        assert isinstance(other, list)
+        _len = min(len(self), len(other))
+        return Mem(0, [_a[_] & other[_] for _ in range(_len)])
+
+    def __or__(self, other):
+        _a = self.to_list()
+        if isinstance(other, int):
+            return Mem(0, [_ | other for _ in _a])
+        if isinstance(other, Mem):
+            other = other.to_list()
+        assert isinstance(other, list)
+        _len = min(len(self), len(other))
+        return Mem(0, [_a[_] | other[_] for _ in range(_len)])
 
     def __repr__(self):
         if self.stack:
@@ -143,7 +183,6 @@ class Mem(object):
         return tmp_arr + barr
 
 
-
     @staticmethod
     def read_file(file_path):
         with open(file_path) as f:
@@ -188,16 +227,16 @@ class Stack(Mem):
         super().__init__(index, stack, mode, latin)
 
     def __getitem__(self, item):
-        result = super().__getitem__(slice(item, item+self.MEM_MODE_MAPPING[self.mode], None))
+        result = super().__getitem__(slice(item, item + self.MEM_MODE_MAPPING[self.mode], None))
         if self.latin:
             result.reverse()
         return Mem.merge_arr_to_int(result)
 
     def __setitem__(self, key, value):
         assert isinstance(value, int)
-        arr = Mem.int_to_arr(value, self.mode)
-        if self.latin == 1:
-            arr.reverse()
-        for i, _ in enumerate(arr):
-            self.stack[self.index + i] = _
+        if isinstance(value, int):
+            arr = Mem.int_to_arr(value, self.mode)
+            if self.latin == 1:
+                arr.reverse()
+        super().__setitem__(key, value)
 
