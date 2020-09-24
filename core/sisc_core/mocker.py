@@ -22,6 +22,12 @@ class Int(int):
     def __xor__(self, other):
         return Int(super().__xor__(other))
 
+    def __or__(self, other):
+        return Int(super().__or__(other))
+
+    def __and__(self, other):
+        return Int(super().__and__(other))
+
 
 class Mem(object):
     MEM_X_MODE = "x"
