@@ -95,11 +95,11 @@ class Mem(object):
             self.stack[self.index + key:self.index + key + len(value)] = value
 
     def __add__(self, other):
-        assert isinstance(other, int)
+        assert isinstance(other, int) and other < len(self)
         return Mem(self.index + other, self.stack)
 
     def __sub__(self, other):
-        assert isinstance(other, int)
+        assert isinstance(other, int) and self.index >= other
         return Mem(self.index - other, self.stack)
 
     def __xor__(self, other):
