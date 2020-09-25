@@ -26,3 +26,14 @@ class InstHelper(object):
         barr = [Int("0b" + i, 2) for i in barr]
         barr.reverse()
         return Mem.merge_arr_to_int(barr)
+
+    @staticmethod
+    def memcpy(x0, x1, x2):
+        if isinstance(x1, Mem):
+            x1 = x1.to_list()[:x2]
+        if isinstance(x0, Mem):
+            x0[:] = x1
+            return x0
+        assert isinstance(x0, list)
+        x0[:x2] = x1
+        return x0

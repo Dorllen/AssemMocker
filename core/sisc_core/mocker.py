@@ -81,9 +81,10 @@ class Mem(object):
         return self.stack[self.index + item]
 
     def __setitem__(self, key, value):
+        # 功能：1：可以超长赋值. 2：自动根据value修正覆盖范围
         assert isinstance(value, int)
         if isinstance(value, int):
-            self.stack[self.index + key] = value & 0xFF
+            self.stack[self.index + key:self.index + key + 1] = [value & 0xFF]
             return
         elif isinstance(value, Mem):
             value = value.to_list()
@@ -91,7 +92,7 @@ class Mem(object):
         if isinstance(key, slice):
             self.stack[slice(key.start + self.index, key.stop + self.index, key.step)] = value
         else:
-            self.stack[self.index + key:len(value)] = value
+            self.stack[self.index + key:self.index + key + len(value)] = value
 
     def __add__(self, other):
         assert isinstance(other, int)
@@ -141,10 +142,14 @@ class Mem(object):
 
     @staticmethod
     def create(size, mode="b"):
+        assert isinstance(size, int)
         return Mem(0, [0 for i in range(size)], mode)
 
     def to_list(self):
         return self.stack[self.index:]
+
+    def to_hex_list(self):
+        return [hex(_) for _ in self.stack[self.index:]]
 
     @staticmethod
     def mem_read(x0, return_size=1, byte_size=4, mode=1):
@@ -191,7 +196,7 @@ class Mem(object):
 
     @staticmethod
     def read_text(text):
-        results = re.findall("(0x[a-zA-Z0-9]+): (.+?)\\s\\s", text)
+        results = re.findall("(0x[a-zA-Z0-9]+): (.+?)\\s\\s", text + "  ")
         stack = []
         for result in results:
             addr, value = result
