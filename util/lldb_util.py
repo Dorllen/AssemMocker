@@ -11,7 +11,7 @@ def dump_function(debugger, command, result, internal_dict):
     return_object = lldb.SBCommandReturnObject()     # 用来保存结果
     interpreter.HandleCommand('dis', return_object)  # 执行dis命令
     output = return_object.GetOutput() #获取反汇编后的结果
-    result = re.findall("unnamed_(symbol.+\\$\\$Aweme)", output)
+    result = re.findall("unnamed_(symbol.+\\$\\$[a-zA-z]+)", output)
     command = command or result[0]
     command = command.strip()
     print("dump functions:", command)
@@ -73,7 +73,7 @@ def dump_line(debugger, command, result, internal_dict):
     return_object = lldb.SBCommandReturnObject()     # 用来保存结果
     interpreter.HandleCommand(f'disassemble -p -c 1', return_object)
     output = return_object.GetOutput()
-    result = re.findall("unnamed_(symbol.+)\\$\\$Aweme", output)
+    result = re.findall("unnamed_(symbol.+)\\$\\$[a-zA-z]+", output)
     file_path = f"{base_save_path}/lldb_codes_{result[0]}.txt"
     with open(file_path, "a") as f:
         lines = output.split("\n")
