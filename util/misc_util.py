@@ -10,54 +10,9 @@ from urllib.parse import parse_qsl
 
 class MiscUtil(object):
     @staticmethod
-    def get_hex_from_stack_raw(raw_str):
-        # 以DCB分块的特征
-        _stack = re.findall("\sDCB\s{1,}(.+?)\s", raw_str)
-        _stack = [int(i, 16) for i in _stack]
-        return _stack
-
-    @staticmethod
-    def get_hex_from_DCD(raw_str):
-        # 以0x开始的特征
-        # _stack = re.findall("\s0(x.+?)(?:,|\s)", raw_str)
-        _stack = []
-        re_stack = re.findall("DCD\s(.+)", raw_str)
-        for i in re_stack:
-            _stack += i.split(",")
-
-        for i, value in enumerate(_stack):
-            if "0x" in value:
-                _stack[i] = int(value.strip(), 16)
-            else:
-                _stack[i] = int(value.strip())
-        return _stack
-
-    @staticmethod
-    def dcd_arr_to_ptr_stack(dcd_arr):
-        _stack = []
-        for i in dcd_arr:
-            dcd_str = hex(i).replace("0x", "")
-            while len(dcd_str) < 8 * 2: # 16个字符。8字节 * 2
-                dcd_str = "0" + dcd_str
-            dcd_temp_arr = [dcd_str[j:j+2] for j in range(0, len(dcd_str), 2)]
-            # 默认小头
-            dcd_temp_arr.reverse()
-            for j in dcd_temp_arr:
-                _stack.append(int("0x%s" % j, 16))
-        return _stack
-
-    @staticmethod
     def compare_diff_stack(s1, s2):
         length = min(len(s1), len(s2))
         print("length:", length, "isRight:", s1[:length] == s2[:length])
-
-    @staticmethod
-    def get_str_from_DCB(raw_str):
-        _stack = []
-        re_stack = re.findall("DCB\s.+;\s(.)", raw_str)
-        for i in re_stack:
-            _stack += str(i)
-        return "".join(_stack)
 
     @staticmethod
     def padding(v, length):
@@ -130,6 +85,54 @@ class MiscUtil(object):
     def rand_character(size, values="0123456789abcedf"):
         return "".join([random.choice(values) for _ in range(size)])
 
+
+class IDAUtil(object):
+    @staticmethod
+    def get_hex_from_stack_raw(raw_str):
+        # 以DCB分块的特征
+        _stack = re.findall("\sDCB\s{1,}(.+?)\s", raw_str)
+        _stack = [int(i, 16) for i in _stack]
+        return _stack
+
+    @staticmethod
+    def get_hex_from_DCD(raw_str):
+        # 以0x开始的特征
+        # _stack = re.findall("\s0(x.+?)(?:,|\s)", raw_str)
+        _stack = []
+        re_stack = re.findall("DCD\s(.+)", raw_str)
+        for i in re_stack:
+            _stack += i.split(",")
+
+        for i, value in enumerate(_stack):
+            if "0x" in value:
+                _stack[i] = int(value.strip(), 16)
+            else:
+                _stack[i] = int(value.strip())
+        return _stack
+
+    @staticmethod
+    def dcd_arr_to_ptr_stack(dcd_arr):
+        _stack = []
+        for i in dcd_arr:
+            dcd_str = hex(i).replace("0x", "")
+            while len(dcd_str) < 8 * 2: # 16个字符。8字节 * 2
+                dcd_str = "0" + dcd_str
+            dcd_temp_arr = [dcd_str[j:j+2] for j in range(0, len(dcd_str), 2)]
+            # 默认小头
+            dcd_temp_arr.reverse()
+            for j in dcd_temp_arr:
+                _stack.append(int("0x%s" % j, 16))
+        return _stack
+
+    @staticmethod
+    def get_str_from_DCB(raw_str):
+        _stack = []
+        re_stack = re.findall("DCB\s.+;\s(.)", raw_str)
+        for i in re_stack:
+            _stack += str(i)
+        return "".join(_stack)
+
+
 class FileUtil(object):
 
     @staticmethod
@@ -146,6 +149,7 @@ class FileUtil(object):
     def read_text(text_path):
         with open(text_path) as f:
             return f.read()
+
 
 class OCUtil(object):
     @staticmethod
