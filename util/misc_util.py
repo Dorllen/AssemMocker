@@ -10,11 +10,6 @@ from urllib.parse import parse_qsl
 
 class MiscUtil(object):
     @staticmethod
-    def compare_diff_stack(s1, s2):
-        length = min(len(s1), len(s2))
-        print("length:", length, "isRight:", s1[:length] == s2[:length])
-
-    @staticmethod
     def padding(v, length):
         while len(v) < length:
             v = "0" + v
@@ -23,20 +18,6 @@ class MiscUtil(object):
     @staticmethod
     def block(l:list, size, register_byte_size=8*8):
         return [l[i:i+size] for i in range(0, register_byte_size, size)]
-
-    @staticmethod
-    def print_stack_hex(r):
-        for i in r:
-            if i > 0xF:
-                i = "0x" + hex(i).replace("0x", "").upper()
-            print("->:", i)
-        print(r)
-        return r
-
-    @staticmethod
-    def parse_mem(text):
-        value = re.findall("0x[a-z0-9]+: ([a-z0-9\\s]+)\\s{2}", text)
-        return value
 
     @staticmethod
     def b64encode(s):
@@ -131,6 +112,27 @@ class IDAUtil(object):
         for i in re_stack:
             _stack += str(i)
         return "".join(_stack)
+
+
+class LLDBUtil(object):
+    @staticmethod
+    def print_stack_hex(r):
+        for i in r:
+            if i > 0xF:
+                i = "0x" + hex(i).replace("0x", "").upper()
+            print("->:", i)
+        print(r)
+        return r
+
+    @staticmethod
+    def parse_mem(text):
+        value = re.findall("0x[a-z0-9]+: ([a-z0-9\\s]+)\\s{2}", text)
+        return value
+
+    @staticmethod
+    def compare_diff_stack(s1, s2):
+        length = min(len(s1), len(s2))
+        print("length:", length, "isRight:", s1[:length] == s2[:length])
 
 
 class FileUtil(object):
