@@ -110,6 +110,21 @@ class MiscUtil(object):
     def gzip_decompress(data):
         return gzip.decompress(data)
 
+    @staticmethod
+    def create_new_template(template:str, **kwargs):
+        # 字符串替换. 例：'{...."old_did":"967194077831208"....}' -> '{...."old_did":""....}'
+        for k, v in kwargs.items():
+            if isinstance(v, str):
+                _template = re.sub("\"%s\":\"(.+?)\"" % k, "\"%s\":\"%s\"" % (k, v), template)
+            elif isinstance(v, bool):
+                _template = re.sub("\"%s\":.+?([,}])" % k, "\"%s\":" % k + ("true" if v else "false") + "$1", template)
+            elif isinstance(v, int):
+                _template = re.sub("\"%s\":.+?([,}])" % k, "\"%s\":" % k + str(v) + "$1", template)
+            else:
+                raise ValueError(f"不支持: {k}:{v}")
+            template = _template
+        return template
+
 class FileUtil(object):
 
     @staticmethod
