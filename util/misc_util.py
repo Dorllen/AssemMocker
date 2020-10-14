@@ -3,6 +3,7 @@ import base64
 import hashlib
 import re
 import gzip
+import random
 
 from urllib.parse import parse_qsl
 
@@ -124,6 +125,10 @@ class MiscUtil(object):
                 raise ValueError(f"不支持: {k}:{v}")
             template = _template
         return template
+
+    @staticmethod
+    def rand_character(size, values="0123456789abcedf"):
+        return "".join([random.choice(values) for _ in range(size)])
 
 class FileUtil(object):
 
