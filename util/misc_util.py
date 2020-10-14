@@ -63,8 +63,11 @@ class MiscUtil(object):
         return template
 
     @staticmethod
-    def rand_character(size, values="0123456789abcedf"):
-        return "".join([random.choice(values) for _ in range(size)])
+    def rand_character(s, values="0123456789abcdef"):
+        if isinstance(s, str):
+            s = len(s)
+        assert isinstance(s, int)
+        return "".join([random.choice(values) for _ in range(s)])
 
 
 class IDAUtil(object):
