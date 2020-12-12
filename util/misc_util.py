@@ -5,7 +5,7 @@ import re
 import gzip
 import random
 
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, unquote, urlparse
 
 
 class MiscUtil(object):
@@ -68,6 +68,80 @@ class MiscUtil(object):
             s = len(s)
         assert isinstance(s, int)
         return "".join([random.choice(values) for _ in range(s)])
+
+
+    @staticmethod
+    def parse_url_args(url):
+        "https://log-hl.snssdk.com/service/2/device_register/?device_id=&is_activated=1&aid=1128&tt_data=a&iid=2057896950772616&ac=4G&build_number=125009&os_api=18&channel=App%20Store&device_platform=iphone&app_version=12.5.0&app_name=aweme&vid=2CBC28DC-AC23-452C-A12B-40098F52ABC8&openudid=020ddcb9a2534bb5e9a09a997bff720dc6ccf523&cdid=3A014205-3F80-430B-838E-218ACA17FF81&device_type=iPhone8,1&idfa=00000000-0000-0000-0000-000000000000&version_code=12.5.0&os_version=12.4&screen_width=750&aid=1128&mcc_mnc=46011"
+        kn = parse_qsl(url)
+        return {k: v for k, v in kn}
+
+    @staticmethod
+    def parse_url_argsv2(url):
+        if not url:
+            return {}
+        url = urlparse(url)
+        u1args = url.query.split("&")
+        u_dict = {}
+        for _ in u1args:
+            _result = re.findall("(.+?)=(.+)", _)
+            if not _result:
+                a = re.findall("(.+?)=", _)[0]
+                b = ""
+            else:
+                a, b = _result[0]
+            u_dict[a] = unquote(b)
+        return u_dict
+
+    @staticmethod
+    def parse_url_args_keys(url):
+        if not url:
+            return {}
+        url = urlparse(url)
+        u1args = url.query.split("&")
+        u_keys = []
+        for _ in u1args:
+            a = re.findall("(.+?)=.?", _)
+            u_keys.append(unquote(a[0]))
+        return u_keys
+
+    @staticmethod
+    def parse_url_arg_name(url):
+        "channel=App%20Store&version_code=11.5.0&app_name=aweme&vid=3A1A694D-0971-43C2-9A9B-6E2A5EC242BD&app_version=11.5.0&mcc_mnc=46011&device_id=2225054094202029&aid=1128&screen_width=750&openudid=ce4b765e03a4bc2212dd5abbd10b233c1e56099f&os_api=18&os_version=12.4&device_platform=iphone&build_number=115011&device_type=iPhone8,1&iid=4195386795242909&idfa=B4E9E277-AF9F-4ADB-AC74-D21B4B7222D6&js_sdk_version=1.68.1.0&cdid=5219731C-5A90-4E79-B207-A666EEEE8D6E"
+        kn = parse_qsl(url)
+        return [k for k, v in kn]
+
+    @staticmethod
+    def merge_url_arg():
+        pass
+
+    @staticmethod
+    def parse_charles_hex(text):
+        # 00000220  20 fa 0e 04 38 16 cd 35 6e f7 fc 38 f1 83 c8 5d
+        return re.findall("^[a-z0-9]{5,}\\s{2}([a-z0-9\\s]+?)(?:\\s{2,}|\\n)", text, flags=re.RegexFlag.M)
+
+    @staticmethod
+    def parse_str_value_to_hex_byte(nsdata_str):
+        assert nsdata_str, "data is none"
+        nsdata_str = nsdata_str.replace(">", "").replace("<", "")
+        nsdata_bytes_arr = nsdata_str.split(" ")
+        # print(nsdata_bytes_arr)
+        byte_array = []
+        for i, bytes_str in enumerate(nsdata_bytes_arr):
+            for k in range(0, len(bytes_str), 2):
+                byte_array.append("0x" + bytes_str[k:k+2])
+        return byte_array
+
+    @staticmethod
+    def parse_hex_array_to_byte(hex_array):
+        byte_array = bytearray()
+        for r in hex_array:
+            byte_array.append(int(r, 16))
+        return byte_array
+
+    @staticmethod
+    def int_to_list(int_value, size=4, reverse=0):
+        return list(int_value.to_bytes(size, "little" if reverse else "big"))
 
 
 class IDAUtil(object):
@@ -137,6 +211,53 @@ class LLDBUtil(object):
         length = min(len(s1), len(s2))
         print("length:", length, "isRight:", s1[:length] == s2[:length])
 
+    @staticmethod
+    def str_to_intList(s):
+        # "00 00 00 00 00 00 00 01 19 f1 03 00 24 00 00 00
+        return [int("0x" + _, 16) for _ in s.split(" ")]
+
+    @staticmethod
+    def str_to_bytes(s):
+        # "00 00 00 00 00 00 00 01 19 f1 03 00 24 00 00 00
+        return bytearray(LLDBUtil.str_to_intList(s))
+
+    @staticmethod
+    def dump_to_hex(value):
+        text = ""
+        for i, v in enumerate(value):
+            if v <= 0xF:
+                v = "0" + hex(v).replace("0x", "")
+            else:
+                v = hex(v)
+            if i > 0 and i % 16 == 0:
+                v = "\n" + v
+            text += v.replace("0x", "") + " "
+        return text
+
+    @staticmethod
+    def dump_to_mem(values):
+        # 不太好保存到文本再解析
+        # import math
+        # mem_size = 16
+        # int_list = values
+        # loop_time = math.ceil(len(int_list) / mem_size)
+        # text = ""
+        # for i in range(loop_time):
+        #     text += "0x%.9x: " % i + LLDBUtil.dump_to_hex(int_list[i*mem_size:(i+1) * mem_size]) + "  \n"
+        # return text
+        return LLDBUtil.dump_to_charles(values)
+
+    @staticmethod
+    def dump_to_charles(values):
+        import math
+        mem_size = 16
+        int_list = values
+        loop_time = math.ceil(len(int_list) / mem_size)
+        text = ""
+        for i in range(loop_time):
+            text += "%.9x  " % i + LLDBUtil.dump_to_hex(int_list[i*mem_size:(i+1) * mem_size]) + "  \n"
+        return text
+
 
 class FileUtil(object):
 
@@ -169,7 +290,7 @@ class OCUtil(object):
 
     @staticmethod
     def parse_mem_to_list(text):
-        return OCUtil.merge_to_list(MiscUtil.parse_mem(text))
+        return OCUtil.merge_to_list(LLDBUtil.parse_mem(text))
 
     @staticmethod
     def merge_to_list(s_list, split_key=" "):
@@ -208,31 +329,7 @@ class OCUtil(object):
     @staticmethod
     def parse_nsdata(ns_data):
         # "<7b0a2020 22776f72 6c645f76 69657722 203a2022 434e222c 0a202022 6c616e67 75616765 22203a20 227a682d 48616e73 2d434e22 0a7d>"
-        return OCUtil.parse_hex_array_to_byte(OCUtil.parse_nsdatastr_value_to_byte(ns_data))
-
-    @staticmethod
-    def parse_charles_hex(text):
-        # 00000220  20 fa 0e 04 38 16 cd 35 6e f7 fc 38 f1 83 c8 5d
-        return re.findall("[a-z0-9]{5,}\\s{2}([a-z0-9\\s]+?)\\s{2,}", text)
-
-    @staticmethod
-    def parse_nsdatastr_value_to_byte(nsdata_str):
-        assert nsdata_str, "data is none"
-        nsdata_str = nsdata_str.replace(">", "").replace("<", "")
-        nsdata_bytes_arr = nsdata_str.split(" ")
-        # print(nsdata_bytes_arr)
-        byte_array = []
-        for i, bytes_str in enumerate(nsdata_bytes_arr):
-            for k in range(0, len(bytes_str), 2):
-                byte_array.append("0x" + bytes_str[k:k+2])
-        return byte_array
-
-    @staticmethod
-    def parse_hex_array_to_byte(hex_array):
-        byte_array = bytearray()
-        for r in hex_array:
-            byte_array.append(int(r, 16))
-        return byte_array
+        return MiscUtil.parse_hex_array_to_byte(MiscUtil.parse_str_value_to_hex_byte(ns_data))
 
     @staticmethod
     def hex_list(l):
@@ -258,22 +355,6 @@ class OCUtil(object):
     def mem_addr_to_global_args(mem_address):
         # 0x0000000282c51980. 只返回两个参数. 第三个参数在0x..cfe处
         return (int("0x"+mem_address[-2:], 16), int("0x"+mem_address[-4:-2], 16))
-
-    @staticmethod
-    def parse_url_args(url):
-        "https://log-hl.snssdk.com/service/2/device_register/?device_id=&is_activated=1&aid=1128&tt_data=a&iid=2057896950772616&ac=4G&build_number=125009&os_api=18&channel=App%20Store&device_platform=iphone&app_version=12.5.0&app_name=aweme&vid=2CBC28DC-AC23-452C-A12B-40098F52ABC8&openudid=020ddcb9a2534bb5e9a09a997bff720dc6ccf523&cdid=3A014205-3F80-430B-838E-218ACA17FF81&device_type=iPhone8,1&idfa=00000000-0000-0000-0000-000000000000&version_code=12.5.0&os_version=12.4&screen_width=750&aid=1128&mcc_mnc=46011"
-        kn = parse_qsl(url)
-        return {k: v for k, v in kn}
-
-    @staticmethod
-    def parse_url_arg_name(url):
-        "channel=App%20Store&version_code=11.5.0&app_name=aweme&vid=3A1A694D-0971-43C2-9A9B-6E2A5EC242BD&app_version=11.5.0&mcc_mnc=46011&device_id=2225054094202029&aid=1128&screen_width=750&openudid=ce4b765e03a4bc2212dd5abbd10b233c1e56099f&os_api=18&os_version=12.4&device_platform=iphone&build_number=115011&device_type=iPhone8,1&iid=4195386795242909&idfa=B4E9E277-AF9F-4ADB-AC74-D21B4B7222D6&js_sdk_version=1.68.1.0&cdid=5219731C-5A90-4E79-B207-A666EEEE8D6E"
-        kn = parse_qsl(url)
-        return [k for k, v in kn]
-
-    @staticmethod
-    def merge_url_arg():
-        pass
 
 
 class Parser(object):
