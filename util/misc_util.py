@@ -203,7 +203,7 @@ class LLDBUtil(object):
 
     @staticmethod
     def parse_mem(text):
-        value = re.findall("0x[a-z0-9]+: ([a-z0-9\\s]+)\\s{2}", text)
+        value = re.findall("0x[a-z0-9]+: ([a-z0-9\\s]+)\\s{2}", text + "  ")
         return value
 
     @staticmethod
