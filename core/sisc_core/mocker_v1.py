@@ -28,8 +28,6 @@ class Int(int):
     def __and__(self, other):
         return Int(super().__and__(other))
 
-ARM_DEFAULT_MASK = 0xFF_FF_FF_FF_FF_FF_FF_FF # 64
-ARM_DEFAULT_MASK_SIZE = 64
 
 class Mem(object):
     MEM_Q_MODE = "x"
@@ -68,28 +66,22 @@ class Mem(object):
         if mode is None:
             mode = Mem.MEM_DEFAULT_MODE
         byte_size = Mem.MEM_MODE_MAPPING[mode]
-        # return Mem.mem_read(self.stack[self.index + item:], 1, byte_size, self.latin)
-        value = self.stack[self.index + item:self.index + item + byte_size]
-        if self.latin:
-            value.reverse()
-        return Mem.merge_arr_to_int(value)
+        return Mem.mem_read(self.stack[self.index + item:], 1, byte_size, self.latin)
 
     def write(self, value, mode, latin):
-        # if isinstance(value, Stack):
-        #     value = value.to_value()
+        if isinstance(value, Stack):
+            value = value.to_value()
         assert isinstance(value, int), "required int value"
         value = value & self.MEM_MODE_MASK_MAPPING[mode]
         int_values = Mem.int_to_arr(value, mode)
         if latin == 1:
             int_values.reverse()
-        # self[0] = Stack(0, int_values, mode, latin)
-        self[0:len(int_values)] = int_values
+        self[0] = Stack(0, int_values, mode, latin)
         return self
 
     @property
     def x(self):
-        return self.read(0, self.MEM_X_MODE)
-        # return Stack(self.index, self.stack, self.MEM_X_MODE, self.latin).to_value()
+        return Stack(self.index, self.stack, self.MEM_X_MODE, self.latin)
 
     @x.setter
     def x(self, value):
@@ -97,8 +89,7 @@ class Mem(object):
 
     @property
     def w(self):
-        return self.read(0, self.MEM_W_MODE)
-        # return Stack(self.index, self.stack, self.MEM_W_MODE, self.latin).to_value()
+        return Stack(self.index, self.stack, self.MEM_W_MODE, self.latin)
 
     @w.setter
     def w(self, value):
@@ -106,8 +97,7 @@ class Mem(object):
 
     @property
     def b(self):
-        return self.read(0, self.MEM_B_MODE)
-        # return Stack(self.index, self.stack, self.MEM_B_MODE, self.latin).to_value()
+        return Stack(self.index, self.stack, self.MEM_B_MODE, self.latin)
 
     @b.setter
     def b(self, value):
@@ -195,22 +185,6 @@ class Mem(object):
     def __len__(self):
         return len(self.stack) - self.index
 
-    def __ge__(self, other):
-        assert isinstance(other, Mem) and self.stack == other.stack, "required same Memory"
-        return self.index.__ge__(other.index)
-
-    def __lt__(self, other):
-        assert isinstance(other, Mem) and self.stack == other.stack, "required same Memory"
-        return self.index.__lt__(other.index)
-
-    def __gt__(self, other):
-        assert isinstance(other, Mem) and self.stack == other.stack, "required same Memory"
-        return self.index.__gt__(other.index)
-
-    def __le__(self, other):
-        assert isinstance(other, Mem) and self.stack == other.stack, "required same Memory"
-        return self.index.__le__(other.index)
-
     @staticmethod
     def create(size, mode="b"):
         assert isinstance(size, int)
@@ -258,11 +232,6 @@ class Mem(object):
         tmp_arr = [0 for _ in range(byte_size - len(barr))]
         return tmp_arr + barr
 
-        # vstr = "%0.16x" % int_value
-        # varr = re.split("(.{2})", vstr.replace("0x", ""))
-        # byte_size = Mem.MEM_MODE_MAPPING[mode]
-        # rarr = [Int("0x" + _, 16) for _ in varr if _]
-        # return rarr[-byte_size:]
 
     @staticmethod
     def read_file(file_path):
@@ -288,31 +257,19 @@ class Mem(object):
             loop_time = math.ceil(len(int_list) / mem_size)
             text = ""
             for i in range(loop_time):
-                text += Mem.hex(int_list[i*mem_size:(i+1) * mem_size]).replace("\n", "") + "\n"
+                text += Mem.hex(int_list[i*mem_size:(i+1) * mem_size]) + "\n"
             return text
         elif isinstance(value, list):
-            text = ""
-            for i, v in enumerate(value):
+            int_value = []
+            for v in value:
                 if v <= 0xF:
                     v = "0" + hex(v).replace("0x", "")
                 else:
                     v = hex(v)
-                if i > 0 and i % 16 == 0:
-                    v = "\n" + v
-                text += v.replace("0x", "") + " "
-
-            return text
+                int_value.append(v.replace("0x", ""))
+            return " ".join(int_value)
         else:
             return hex(value)
-
-    def dump(self):
-        mem_size = 16
-        int_list = self.to_list()
-        loop_time = math.ceil(len(int_list) / mem_size)
-        text = ""
-        for i in range(loop_time):
-            text += "0x%.9x: " % i + Mem.hex(int_list[i*mem_size:(i+1) * mem_size]) + "  \n"
-        return text
 
 
 class Stack(Mem):
@@ -342,19 +299,3 @@ class Stack(Mem):
                 arr.reverse()
         super().__setitem__(key, value)
 
-
-if __name__ == '__main__':
-    # x = [_ for _ in range(255)]
-    # print(Mem.hex(x))
-    vstr = "%0.16x" % 0xabcdef
-    print(vstr, len(vstr))
-    print(vstr[::2])
-    t = re.split("(.{2})", vstr.replace("0x", ""))
-    byte_size = 4
-    l = []
-    for _ in t:
-        if _:
-            l.append(Int("0x" + _, 16))
-    print(t)
-    print(l)
-    print(l[-byte_size:])
