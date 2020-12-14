@@ -128,6 +128,7 @@ def read_mem_by_easy(debugger, command, result, internal_dict):
 ##### 定制化处理部分 ###########
 
 def wechat_test_for_mem(debugger, command, result, internal_dict):
+    # mmtls:Init 0x26D094 位置处
     x0 = read_register_value("$x19")
     x19_value = int(x0, 16)
     x19_0x60 = x19_value + 0x60
@@ -148,6 +149,19 @@ def wechat_test_for_mem(debugger, command, result, internal_dict):
     _command = f"memory read -c 0x94 {psk_addr}"
     lldb.debugger.HandleCommand(_command)
 
+def wechat_test_for_b0(debugger, command, result, internal_dict):
+    # mmtls::ClientChannel::WriteMsgToSendBuffer 0x26EF64 位置处
+    x0 = read_register_value("$x0")
+    # *(*(*(x0 + 0x8 + 0x10) + 0x28) + 0x8)
+    _ = read_ptr_value(int(x0, 16) + 0x8 + 0x10)
+    _ = read_ptr_value(int(_, 16) + 0x28)
+    _ = read_ptr_value(int(_, 16) + 0x8)
+
+    _command = f"memory read -c 0x64 {_}"
+    print("_command:", _command)
+    lldb.debugger.HandleCommand(_command)
+
+
 
 
 # command script import xxx/lldb_util.py
@@ -161,3 +175,4 @@ def __lldb_init_module(debugger, internal_dict):
     debugger.HandleCommand('command script add -f lldb_util.read_mem_from_ptr readPtr')
     debugger.HandleCommand('command script add -f lldb_util.read_mem_by_easy measy')
     debugger.HandleCommand('command script add -f lldb_util.wechat_test_for_mem wechat_x19')
+    debugger.HandleCommand('command script add -f lldb_util.wechat_test_for_b0 wechat_b0')
