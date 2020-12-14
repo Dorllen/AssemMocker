@@ -22,6 +22,20 @@ class iOSUtil(object):
             result.append(hex(IDA_offset_address + arg - adsl))
         return result
 
+    @staticmethod
+    def compute_real_address_by_rela(base0, offset, *args):
+        result = []
+        for _ in args:
+            result.append(hex(base0 + (_ - offset)))
+        return result
+
+    @staticmethod
+    def reverse_real_address_by_real(base0, offset, *args):
+        result = []
+        for _ in args:
+            result.append(hex(_ - base0 + offset))
+        return result
+
 
 def aweme_test():
     # image list Aweme
@@ -52,7 +66,26 @@ def news_article_test():
                                        ))
     print(iOSUtil.reverse_real_address(adsl, 0x1036153e0))
 
+
+def wechcat_test():
+    # process connect connect://localhost:12345
+    # image list WeChat
+    adsl = 0x0000000100e74000
+
+    print("基本断点处：", iOSUtil.compute_real_address(adsl,
+
+                                                 ))
+
+    x16_base = 0x10bf6d9a8 # b -n "StartSNSDownload"
+    x16_base_offset = 0x3F19A8
+    print("mars断点处：", iOSUtil.compute_real_address_by_rela(x16_base, x16_base_offset,
+                                                           0x26D094, # Init
+                                                           0x26D26C, # sendToPeer
+                                                           ))
+
+
 if __name__ == '__main__':
     # aweme_test()
-    news_article_test()
+    # news_article_test()
+    wechcat_test()
     pass
