@@ -34,7 +34,7 @@ class InstHelper(object):
         return arg0_high | arg0_mid | arg0_low
 
     @staticmethod
-    def rev(arg):
+    def rev(arg, size=8):
         # rev: 0x000000006eb740dc -> 0x00000000dc40b76e 字节反转
         # 0x000000000039b100 -> 0x0000000000b13900
         # bstr = bin(arg).replace("0b", "")
@@ -45,7 +45,7 @@ class InstHelper(object):
         # barr.reverse()
         # return Mem.merge_arr_to_int(barr)
 
-        s = "%0.8x" % arg
+        s = f"%0.{size}x" % arg
         s = [s[_:_+2] for _ in range(0, len(s), 2)]
         s.reverse()
         return Int("0x" + "".join(s), 16)
@@ -77,3 +77,74 @@ class InstHelper(object):
         for _ in range(x1):
             x0[_] = 0
         return x0
+
+    @staticmethod
+    def orr(x0, x1):
+        return x0 | x1
+
+    @staticmethod
+    def ror(x0, x1, size=4):
+        """
+        当x寄存器时，size=8; w寄存器时，size=4.默认w寄存器
+        注： extr 指令 IH.extr(w10, w10, 0x13) = IH.ror(w10, 0x13)
+        :param x0: 值
+        :param x1: 位数
+        :param size: 字节数
+        :return:
+        """
+        x0 = x0 & ((2 << (size * 8 - 1)) -1)
+        x0_0 = x0 << (size * 8 - x1)
+        x0_1 = x0 >> x1
+        return x0_0 | x0_1
+
+
+    @staticmethod
+    def bic(x0, x1):
+        """
+        x1与x0 位对应位置，如果bin_x1[]=0,则值为bin_x0[],否则为0
+        (0x00000000b3bf9ede bic 0x0000000054a5e59f).w = 0xa31a1a40
+        :param x0:
+        :param x1:
+        :return:
+        """
+        # x0 = x0 & ((2 << (size * 8 - 1)) -1)
+        # x1 = x1 & ((2 << (size * 8 - 1)) -1)
+        bx0 = bin(x0).replace("0b", "")
+        bx1 = bin(x1).replace("0b", "")
+        while len(bx1) < len(bx0):
+            bx1 = "0" + bx1
+
+        while len(bx0) < len(bx1):
+            bx0 = "0" + bx0
+
+        assert len(bx1) == len(bx0)
+        _ = []
+        for i in range(len(bx0)):
+            if bx1[i] == "0":
+                _.append(bx0[i])
+            else:
+                _.append("0")
+        return int("0b" + "".join(_), 2)
+
+    @staticmethod
+    def sxtw(arg0):
+        return arg0
+
+    @staticmethod
+    def sbfiz(arg0, arg1, arg2):
+        """
+        sbfiz(0x1, 2, 32) -> 0x4
+        :param arg0:
+        :param arg1:
+        :param arg2:
+        :return:
+        """
+        return (arg0 << arg1) & ((1 << arg2) - 1)
+
+
+
+if __name__ == '__main__':
+    # t = InstHelper.bic(0x00000000b3bf9ede, 0x0000000054a5e59f)
+    t = InstHelper.ror(0x0000001254a5e59f, 11)
+    print(hex(t))
+    print(hex(0x7d529796 ^ t & 0xFF_FF_FF_FF))

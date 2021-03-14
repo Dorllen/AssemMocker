@@ -135,6 +135,12 @@ class Mem(object):
 
     def __setitem__(self, key, value):
         # 功能：1：可以超长赋值. 2：自动根据value修正覆盖范围
+        """
+        例：(sp + 0x390 - 0x1E0)[0x10:] = q1 或 (sp + 0x390 - 0x1E0 + 0x10)[:] = q1
+        :param key:
+        :param value:
+        :return:
+        """
         if isinstance(value, int):
             self.stack[self.index + key:self.index + key + 1] = [value & 0xFF]
             return
@@ -144,7 +150,13 @@ class Mem(object):
         if isinstance(key, slice):
             s, e = key.start, key.stop
             s = s + self.index if s else self.index
-            e = e + self.index if e else None
+            if e is None:
+                if s < 0:
+                    e = len(self)
+                else:
+                    e = s + len(value)
+            else:
+                e = e + s
             self.stack[slice(s, e, key.step)] = value
         else:
             self.stack[self.index + key:self.index + key + len(value)] = value
@@ -279,6 +291,20 @@ class Mem(object):
             values = [Int("0x" + v, 16) for v in value.split(" ")]
             stack += values
         return Mem(0, stack)
+
+    @staticmethod
+    def from_list(l):
+        return Mem(0, list(l))
+
+    def resize(self, size):
+        self.stack = self.stack[:size]
+        return self
+
+    @staticmethod
+    def padding(mem, size, padding_value=0x0):
+        for _ in range(size):
+            mem.stack.append(padding_value)
+        return mem
 
     @staticmethod
     def hex(value):
